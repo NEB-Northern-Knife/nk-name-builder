@@ -665,6 +665,7 @@ const NK_VOCAB_VIDEO = {
 
 const MODE = "web"; // "figma" or "web"
 const MENU_URL_DEFAULT = "https://script.google.com/macros/s/AKfycbyIBeDFBLOMdpltwrM7RDeeTAzP3ee07mqZ5Cu_nWUWnPPPTSZMDV5pdplV7QBNL-rs/exec"; // filled by the Apps Script host, empty otherwise
+const LOCK = ""; // "static" or "video" pins the page to one convention and hides the tabs
 </script>
 <script>
 (function(){
@@ -673,7 +674,7 @@ const MENU_URL_DEFAULT = "https://script.google.com/macros/s/AKfycbyIBeDFBLOMdpl
   document.getElementById("modechip").textContent = isFigma ? "Figma plugin" : "Web";
   const tabs = document.getElementById("tabs");
   const hasVideo = typeof NK_VOCAB_VIDEO !== "undefined";
-  if (isFigma || !hasVideo) tabs.classList.add("hidden");
+  if (isFigma || !hasVideo || LOCK === "static" || LOCK === "video") tabs.classList.add("hidden");
 
   const form = document.getElementById("form");
   const $ = (n) => form.elements[n];
@@ -926,7 +927,8 @@ const MENU_URL_DEFAULT = "https://script.google.com/macros/s/AKfycbyIBeDFBLOMdpl
 
   // boot
   let startMode = "static";
-  if (!isFigma && hasVideo) { try { const q = new URLSearchParams(location.search).get("mode"); startMode = q === "video" ? "video" : (localStorage.getItem("nk-name-mode") === "video" ? "video" : "static"); } catch (e) { } }
+  if (LOCK === "static" || LOCK === "video") startMode = LOCK;
+  else if (!isFigma && hasVideo) { try { const q = new URLSearchParams(location.search).get("mode"); startMode = q === "video" ? "video" : (localStorage.getItem("nk-name-mode") === "video" ? "video" : "static"); } catch (e) { } }
   mount(startMode);
   if (isFigma) parent.postMessage({ pluginMessage: { type: "ready" } }, "*");
 })();
