@@ -1,0 +1,935 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NK Video Name Builder</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#F0F0F2; --panel:#FFFFFF; --panel-2:#F7F7F8; --ink:#0B0D12; --muted:#5F6068; --line:#D5D5D7; --gold:#B3985F;
+    --accent:#C12F27; --accent-ink:#FFFFFF; --accent-soft:#F8E3E1; --ok:#1E7F4F; --ok-soft:#E1F3E9; --warn:#9A6400; --warn-soft:#FFF3D6; --bad:#B42318; --bad-soft:#FBE4E1;
+    --g1:#3B5BDB; --g2:#0B7285; --g3:#5F3DC4; --g4:#C92A2A; --g5:#862E9C; --g6:#087F5B;
+    --display:"Bebas Neue","Oswald","Arial Narrow",Impact,sans-serif; --body:"Poppins",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --ground:#0B0D12; --panel:#15181F; --panel-2:#1C2028; --ink:#F0F0F2; --muted:#9A9CA6; --line:#2A2E38; --gold:#C7B48B;
+    --accent:#D53631; --accent-ink:#FFFFFF; --accent-soft:#3A1615; --ok:#5CCB8A; --ok-soft:#173224; --warn:#F2C14E; --warn-soft:#3A2F0F; --bad:#F87171; --bad-soft:#3B1A18;
+    --g1:#8DA2FF; --g2:#5FD3E8; --g3:#B39DFF; --g4:#FF8787; --g5:#DA9BF0; --g6:#5FD1A8;
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0B0D12; --panel:#15181F; --panel-2:#1C2028; --ink:#F0F0F2; --muted:#9A9CA6; --line:#2A2E38; --gold:#C7B48B;
+    --accent:#D53631; --accent-ink:#FFFFFF; --accent-soft:#3A1615; --ok:#5CCB8A; --ok-soft:#173224; --warn:#F2C14E; --warn-soft:#3A2F0F; --bad:#F87171; --bad-soft:#3B1A18;
+    --g1:#8DA2FF; --g2:#5FD3E8; --g3:#B39DFF; --g4:#FF8787; --g5:#DA9BF0; --g6:#5FD1A8;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--ground);color:var(--ink);font:14px/1.45 var(--body)}
+  body.figma{font-size:12.5px}
+  .app{max-width:1220px;margin:0 auto;padding:20px 20px 60px;display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:20px;align-items:start}
+  body.figma .app{grid-template-columns:1fr;padding:12px 12px 40px;gap:12px}
+  @media (max-width:900px){ .app{grid-template-columns:1fr} }
+  header{grid-column:1 / -1;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  header h1{font:400 34px/1 var(--display);letter-spacing:.04em;margin:0;text-transform:uppercase}
+  header h1 b{color:var(--accent);font-weight:400}
+  body.figma header h1{font-size:26px}
+  header .chip{font:500 10px/1 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--gold);border:1px solid var(--gold);border-radius:2px;padding:5px 8px}
+  header .sub{flex-basis:100%;color:var(--muted);margin:0;max-width:72ch}
+  .tabs{grid-column:1 / -1;display:flex;gap:6px}
+  .tabs button{font:400 18px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;padding:10px 18px;border-radius:3px 3px 0 0;border:1px solid var(--line);border-bottom:0;background:var(--panel-2);color:var(--muted)}
+  .tabs button.on{background:var(--panel);color:var(--accent);border-color:var(--accent)}
+  .out{position:sticky;top:12px;display:grid;gap:10px}
+  body.figma .out{order:-1;grid-column:1 / -1;top:0;background:var(--ground);padding-bottom:6px;z-index:2;gap:6px}
+  body.figma .out .meta{font-size:11px} body.figma .out button{padding:8px 10px;font-size:12px}
+  body.figma .below{display:grid;gap:8px}
+  .name{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:12px 14px;font:12.5px/1.75 var(--mono);word-break:break-all;min-height:96px}
+  body.figma .name{font:10.5px/1.5 var(--mono);min-height:0;max-height:66px;overflow:auto;padding:8px 10px}
+  .ratios{display:grid;gap:8px} .rbox{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:8px 10px;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+  .rbox .rl{font:400 18px/1 var(--display);letter-spacing:.06em;color:var(--gold)} .rbox .rn{font:11px/1.5 var(--mono);word-break:break-all;color:var(--muted)} .rbox button{padding:8px 10px;font-size:12px;white-space:nowrap}
+  .name .tok{border-radius:3px;padding:0 2px;cursor:help}
+  .name .sep{color:var(--muted)}
+  .name .tok:hover{outline:1px solid currentColor}
+  .tok.g-who{color:var(--g1)} .tok.g-brief{color:var(--g2)} .tok.g-message{color:var(--g3)} .tok.g-visual,.tok.g-production{color:var(--g6)} .tok.g-origin{color:var(--g5)} .tok.g-ratio,.tok.g-fixed{color:var(--muted)}
+  .tok.k-concept{color:var(--ink);font-weight:500} .tok.k-format{color:var(--accent);font-weight:500} .tok.k-avatar{color:var(--gold);font-weight:500} .tok.k-id{font-weight:500}
+  .tok.missing{background:var(--bad-soft);color:var(--bad);font-weight:500}
+  .meta{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+  .btns{display:flex;gap:8px;flex-wrap:wrap}
+  button{font:500 13px/1 var(--body);border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:3px;padding:10px 14px;cursor:pointer}
+  button:hover{border-color:var(--ink)} button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  button.primary:hover{filter:brightness(.95)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .msgs{display:grid;gap:6px}
+  .msg{border-radius:3px;padding:8px 10px;font-size:12.5px}
+  .msg.ok{background:var(--ok-soft);color:var(--ok)} .msg.warn{background:var(--warn-soft);color:var(--warn)} .msg.bad{background:var(--bad-soft);color:var(--bad)}
+  .sel{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:10px 12px;font-size:12.5px;display:grid;gap:4px}
+  .sel .row{display:flex;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:11.5px}
+  .sel .row span:last-child{color:var(--muted);white-space:nowrap}
+  form{display:grid;gap:14px;margin:0}
+  fieldset{border:1px solid var(--line);border-radius:4px;background:var(--panel);padding:12px 14px 14px;margin:0;display:grid;gap:10px}
+  legend{font:400 16px/1 var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--ink);padding:0 6px;display:flex;gap:8px;align-items:center}
+  legend .n{font:500 10px/1 var(--mono);letter-spacing:0;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 6px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+  body.figma .grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  label.f{display:grid;gap:4px;min-width:0;align-content:start}
+  label.f.wide{grid-column:1 / -1}
+  label.f>span.l{font:600 11px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;gap:6px}
+  label.f>span.l em{font-style:normal;color:var(--accent);letter-spacing:0;text-transform:none;font-weight:500}
+  select,input[type=text],input[type=date],input[type=number],textarea{width:100%;font:inherit;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:3px;padding:8px 9px;min-width:0}
+  select:focus,input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+  select.empty{color:var(--bad);border-color:var(--bad)}
+  .hint{color:var(--muted);font-size:11.5px;line-height:1.35;min-height:15px}
+  .fmt{display:grid;gap:8px}
+  .fmt .desc{display:flex;gap:8px;align-items:baseline;font-size:12.5px;min-height:18px}
+  .fmt .desc b{font-family:var(--mono);font-weight:500;color:var(--accent)}
+  textarea{font:11.5px/1.5 var(--mono);resize:vertical;min-height:52px}
+  .idrow{display:flex;gap:6px;align-items:center}
+  .idrow input{flex:1}
+  .idrow button{padding:8px 10px;font-size:12px}
+  details.legend{grid-column:1 / -1;color:var(--muted);font-size:12.5px}
+  details.legend summary{cursor:pointer;font-weight:600;color:var(--ink)}
+  details.legend table{border-collapse:collapse;width:100%;margin-top:8px}
+  details.legend td{border-top:1px solid var(--line);padding:5px 6px;vertical-align:top}
+  details.legend td:first-child{font-family:var(--mono);white-space:nowrap;color:var(--ink)}
+  .hidden{display:none !important}
+</style>
+
+<div class="app" id="app">
+  <header>
+    <h1>Northern<b>Knife</b> Name Builder</h1>
+    <span class="chip" id="verchip">v2</span>
+    <span class="chip" id="modechip"></span>
+    <p class="sub" id="subline">Every field is a menu. The name builds itself as you pick. Only the concept is typed. Red = still to pick.</p>
+  </header>
+  <div class="tabs" id="tabs"><button type="button" data-mode="static" class="on">Static</button><button type="button" data-mode="video">Video</button></div>
+
+  <form id="form" autocomplete="off" onsubmit="return false"></form>
+
+  <aside class="out">
+    <div class="name" id="name"></div>
+    <div class="meta"><span id="fieldcount"></span><span id="charcount"></span></div>
+    <div class="ratios" id="ratios"></div>
+    <div class="btns">
+      <button type="button" class="primary" id="applybtn">Apply to selected frames</button>
+      <button type="button" id="copybtn">Copy both</button>
+      <button type="button" id="rescanbtn" title="Re-read the frame names on this page">Rescan page</button>
+      <button type="button" id="resetbtn" title="Clear everything except what is remembered">Reset</button>
+    </div>
+    <div class="msgs" id="msgs"></div>
+    <div class="sel" id="selbox"></div>
+    <div class="fmt">
+      <textarea id="paste" placeholder="Paste an old or new name here. The menus fill themselves; old names are translated where they can be."></textarea>
+    </div>
+  </aside>
+</div>
+
+<script>
+// NK static ad naming convention v2 - single source of truth for every dropdown.
+// Edit HERE, then run `python3 build.py` to regenerate ui.html (Figma) and web/index.html.
+// Rules: no `/ : ? * " < > | _` inside any value (they break Figma export + the underscore split).
+// Every value is unique across ALL fields so a name can be parsed by token, not by position.
+// To add a field: one entry in `fields` (kind "select" + a `list` name) and the list below. The form builds itself.
+
+const NK_VOCAB = {
+  convention: "2.2 (2026-09-19)",
+  delimiter: "_",
+
+  // Field order = the name. Never reorder without bumping `convention`.
+  // group = which box of the form it sits in. list = the option list below (for kind "select").
+  // remember = pre-selected next time (per designer machine).
+  fields: [
+    // --- who & what ---
+    { key: "id",        group: "Who & what",  label: "Creative ID",     kind: "id",     help: "Designer prefix + 3 digits. Auto next number on this page. Never reuse an ID." },
+    { key: "type",      group: "Who & what",  label: "Asset type",      kind: "select", list: "type",      help: "IMG = static. GIF = animated static.", remember: true },
+    { key: "date",      group: "Who & what",  label: "Date",            kind: "date",   help: "MM.DD.YY, the day the frame is finished." },
+    { key: "concept",   group: "Who & what",  label: "Concept",         kind: "text",   help: "Short human title, max 30 chars. Illegal characters are stripped automatically.", wide: true },
+    { key: "version",   group: "Who & what",  label: "Version",         kind: "select", list: "version",   help: "V1 = first cut of this concept. V2+ = a re-skin of the same concept." },
+    { key: "strategist",group: "Who & what",  label: "Strategist",      kind: "select", list: "strategist",help: "Who briefed the idea.", remember: true },
+    { key: "designer",  group: "Who & what",  label: "Designer",        kind: "select", list: "designer",  help: "Who built the file. Sets the ID prefix.", remember: true },
+    // --- brief ---
+    { key: "market",    group: "Brief",       label: "Market",          kind: "select", list: "market",    help: "Which store it is built for. Mkt-All when it ships to every store unchanged.", remember: true },
+    { key: "event",     group: "Brief",       label: "Event / season",  kind: "select", list: "event",     help: "What moment the ad is built for. Evergreen when none.", remember: true },
+    { key: "product",   group: "Brief",       label: "Product",         kind: "select", list: "product",   help: "Hero product. Multi when 2+ knives share the frame.", remember: true },
+    { key: "avatar",    group: "Brief",       label: "Avatar",          kind: "select", list: "avatar",    help: "Who the ad talks to. Always ONE named avatar. There is no 'everyone'.", remember: true },
+    { key: "funnel",    group: "Brief",       label: "Funnel role",     kind: "select", list: "funnel",    help: "Top of funnel finds new people (First Click). Middle warms them. Bottom closes people who already know us.", remember: true },
+    { key: "lp",        group: "Brief",       label: "Landing page",    kind: "select", list: "lp",        help: "Where the click goes (Ridge: destination).", remember: true },
+    // --- message ---
+    { key: "angle",     group: "Message",     label: "Messaging angle", kind: "select", list: "angle",     help: "What the ad argues. One angle per ad (Ridge: angle identifier; Motion: messaging angle)." },
+    { key: "hook",      group: "Message",     label: "Hook tactic",     kind: "select", list: "hook",      help: "How the headline grabs, not the words (Motion: hook tactic)." },
+    { key: "tone",      group: "Message",     label: "Tone",            kind: "select", list: "tone",      help: "The voice of the copy." },
+    { key: "offer",     group: "Message",     label: "Offer shown",     kind: "select", list: "offer",     help: "The offer visible IN the ad, not the offer live on site.", remember: true },
+    { key: "offerRole", group: "Message",     label: "Offer placement", kind: "select", list: "offerRole", help: "Where the offer sits. House rule: it resolves the subject, it never IS the headline." },
+    { key: "price",     group: "Message",     label: "Price shown",     kind: "select", list: "price",     help: "Is a price or a compared-at price visible?" },
+    { key: "proof",     group: "Message",     label: "Proof element",   kind: "select", list: "proof",     help: "Which trust device is on the canvas." },
+    { key: "copyLen",   group: "Message",     label: "Copy length",     kind: "select", list: "copyLen",   help: "Total words on the canvas." },
+    { key: "copyBy",    group: "Message",     label: "Copy written by", kind: "select", list: "copyBy",    help: "Who wrote the words on the ad." },
+    // --- visual ---
+    { key: "format",    group: "Visual",      label: "Visual format",   kind: "format", help: "The device the ad borrows. Pick from the Notion menu; ask before inventing a new one.", wide: true },
+    { key: "media",     group: "Visual",      label: "Image origin",    kind: "select", list: "media",     help: "How the main visual was made." },
+    { key: "text",      group: "Visual",      label: "Text weight",     kind: "select", list: "text",      help: "How much of the ad is words." },
+    { key: "compare",   group: "Visual",      label: "Comparison",      kind: "select", list: "compare",   help: "Does the ad put two things side by side, and which kind?" },
+    { key: "shot",      group: "Visual",      label: "Product shot",    kind: "select", list: "shot",      help: "How the knife appears (Nectar tracked product orientation the same way)." },
+    { key: "human",     group: "Visual",      label: "Person on image",  kind: "select", list: "human",     help: "Is there a person, and are they happy or reacting?" },
+    { key: "palette",   group: "Visual",      label: "Palette",         kind: "select", list: "palette",   help: "Overall ground of the frame (Ridge: colorway)." },
+    { key: "fidelity",  group: "Visual",      label: "Fidelity",        kind: "select", list: "fidelity",  help: "Polished brand look vs deliberately rough / native (HexClad: hi-fi vs lo-fi)." },
+    // --- origin ---
+    { key: "category",  group: "Origin",      label: "Category",        kind: "select", list: "category",  help: "New = net-new idea. Ite = iteration of our own ad. Adapt = adapted from another brand's ad." },
+    { key: "source",    group: "Origin",      label: "Adapted from",    kind: "source", help: "Only when Category is Adapt: the brand the mechanic came from. Src-None otherwise." },
+    // --- tail ---
+    { key: "ratio",     group: "Ratio",       label: "Ratio",           kind: "ratio",  help: "Read from the frame size in Figma. 1x1, 4x5 or 9x16." },
+  ],
+
+  // Option lists. A plain string is the value; {v, d} shows "v - d" in the menu, only v goes in the name.
+  type: ["IMG", "GIF"],
+  version: ["V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9"],
+  strategist: ["Andy", "Mark", "Claude", "Mauro", "Callum", "Kel", "Zyrille", "Nazmul"],
+  // Designer -> ID prefix. Add new designers here.
+  designer: [
+    { v: "Kel",      prefix: "K" },
+    { v: "Zyrille",  prefix: "Z" },
+    { v: "Nazmul",   prefix: "N" },
+    { v: "Udi",      prefix: "U" },
+    { v: "Pam",      prefix: "P" },
+    { v: "Andy",     prefix: "A" },
+  ],
+
+  market: [
+    { v: "Mkt-US",  d: "United States" }, { v: "Mkt-UK", d: "United Kingdom" }, { v: "Mkt-AU", d: "Australia" },
+    { v: "Mkt-CA",  d: "Canada" }, { v: "Mkt-DE", d: "Germany" }, { v: "Mkt-NL", d: "Netherlands" },
+    { v: "Mkt-All", d: "ships to every store unchanged" },
+  ],
+
+  event: [
+    "Evergreen", "Labor Day Sale", "Black Friday", "Cyber Monday", "BFCM", "Christmas", "New Year",
+    "Valentines", "Presidents Day", "Easter", "Mothers Day", "Memorial Day", "Fathers Day",
+    "July 4th", "Prime Day", "Summer Sale", "Grilling Season", "EOFY", "Anniversary",
+    "Product Launch", "Restock", "Hiring Test",
+  ],
+
+  product: [
+    "Feather", "BJORN Santoku", "LOKI", "LOKI Blackout", "LOKI Reaper", "LOKI Berserker",
+    "BJORN Utility", "BJORN Chef", "ODIN 6 Boss", "ODIN 8 Boss", "ODIN Hybrid Cleaver", "ODIN Set",
+    "RAGNAR Butcher", "RAGNAROK Rising Butcher", "VALHALLA Chef", "VALHALLA Butcher",
+    "Tiger Cleaver", "Dragon Cleaver", "GUNNAR Cleaver", "GUNNAR Butcher", "GUNNAR Butcher XXL",
+    "Rolling Sharpener", "Magnetic Holder", "Sheath", "Multi",
+  ],
+
+  // Always exactly one. There is no "everyone".
+  avatar: [
+    { v: "MIKE",    d: "MIKE - BBQ King" },
+    { v: "JOHN",    d: "JOHN - Knife Collector" },
+    { v: "STEVE",   d: "STEVE - Home Cook" },
+    { v: "SARAH",   d: "SARAH - The Wife (gifter)" },
+    { v: "VANCE",   d: "VANCE - The Opportunist (deal seeker)" },
+    { v: "DON",     d: "DON - The Hunter" },
+    { v: "COLE",    d: "COLE - The Camper / Bushcraft" },
+    { v: "DANA",    d: "DANA - Knife Sharpener" },
+    { v: "DARIEN",  d: "DARIEN - Proud Parents" },
+  ],
+
+  funnel: [
+    { v: "Fun-TOF", d: "top of funnel: finds new people, judged on First Click ROAS" },
+    { v: "Fun-MOF", d: "middle of funnel: warms people who saw us once, not yet buyers" },
+    { v: "Fun-BOF", d: "bottom of funnel: closes people who already know us" },
+  ],
+
+
+  lp: [
+    { v: "PDP",             d: "product page" },
+    { v: "6r-General",      d: "6 Reasons listicle, general" },
+    { v: "6r-Feather",      d: "6 Reasons, Feather" },
+    { v: "6r-Blackout",     d: "6 Reasons, LOKI Blackout" },
+    { v: "6r-Santoku",      d: "6 Reasons, BJORN Santoku" },
+    { v: "6r-Sharpener",    d: "6 Reasons, Rolling Sharpener" },
+    { v: "3r-General",      d: "3 Reasons, general" },
+    { v: "7r-Blackout",     d: "7 Reasons, Blackout" },
+    { v: "Collection Page", d: "collection page" },
+    { v: "Offer Page",      d: "offer / promo page" },
+    { v: "BYS",             d: "build your set" },
+    { v: "VIP",             d: "VIP free-gift page" },
+  ],
+
+  angle: [
+    { v: "Value Offer",   d: "the deal is the argument (B2G2, price, gift)" },
+    { v: "Craftsmanship", d: "hand-forged, months to make, the maker's story" },
+    { v: "Scarcity",      d: "stock, batch, deadline, last units" },
+    { v: "Product Proof", d: "what the blade does: the cut, the weight, the grip" },
+    { v: "Social Proof",  d: "reviews, customers, sold-out counts" },
+    { v: "Brand Story",   d: "who we are, transparency, apology, behind the scenes" },
+    { v: "Identity",      d: "the kind of person who owns this (pitmaster, collector)" },
+    { v: "Collection",    d: "display, set, centerpiece, the shelf" },
+    { v: "Upgrade",       d: "your old knife vs this one" },
+    { v: "Gifting",       d: "buying it for someone else" },
+    { v: "Objection",     d: "answers a doubt: too sharp, too pretty, too expensive" },
+    { v: "Humor",         d: "the joke carries it" },
+    { v: "Education",     d: "teaches something first (hack, how-to, why)" },
+    { v: "Durability",    d: "outlasts, survives, heirloom" },
+  ],
+
+  hook: [
+    { v: "Bold Claim",  d: "a flat statement: 'Sharpest knife you will own'" },
+    { v: "Question",    d: "asks the reader something" },
+    { v: "Confession",  d: "we messed up / sorry / we made too many" },
+    { v: "Warning",     d: "don't buy / careful / this is not for you" },
+    { v: "Number",      d: "a stat or count leads: '3 months to forge'" },
+    { v: "Callout",     d: "names the reader: 'If you grill every weekend'" },
+    { v: "Contrarian",  d: "says the opposite of what ads say" },
+    { v: "Story",       d: "starts mid-scene: 'He hasn't touched his old set since'" },
+    { v: "Command",     d: "tells them what to do: 'Keep scrolling'" },
+  ],
+
+  tone: [
+    { v: "Tone-Blunt",   d: "raw, short, the real NK voice" },
+    { v: "Tone-Funny",   d: "meme, joke, wink" },
+    { v: "Tone-Urgent",  d: "deadline, last units, now" },
+    { v: "Tone-Warm",    d: "gift, family, heirloom" },
+    { v: "Tone-Serious", d: "craft, proof, no jokes" },
+  ],
+
+  offer: ["B2G2", "B2G1", "B1G1", "64%OFF", "56%OFF", "40%+Gifts", "Mystery Gift", "Free Gift", "NoOffer"],
+
+  offerRole: [
+    { v: "Off-Badge",    d: "small badge or sticker, the message is something else" },
+    { v: "Off-Body",     d: "inside the copy, after the setup" },
+    { v: "Off-Headline", d: "the offer IS the headline (avoid; flag when you do it)" },
+    { v: "Off-Absent",   d: "no offer on the canvas" },
+  ],
+
+  price: [
+    { v: "Prc-Shown",   d: "a price or compared-at price is visible" },
+    { v: "Prc-Hidden",  d: "no number on the canvas" },
+  ],
+
+  proof: [
+    { v: "Prf-None",      d: "no trust device" },
+    { v: "Prf-Reviews",   d: "quoted review text" },
+    { v: "Prf-Stars",     d: "star rating only" },
+    { v: "Prf-Count",     d: "a number: customers, sold out X times" },
+    { v: "Prf-Guarantee", d: "money-back / warranty (terms must be confirmed)" },
+    { v: "Prf-Press",     d: "media / as seen in" },
+    { v: "Prf-Maker",     d: "the blacksmith, the forge, the process" },
+  ],
+
+  copyLen: [
+    { v: "Len-Short", d: "up to 8 words" },
+    { v: "Len-Mid",   d: "9 to 25 words" },
+    { v: "Len-Long",  d: "26+ words (Long-Form Copy device)" },
+  ],
+
+  copyBy: [
+    { v: "Cpy-Designer",   d: "designer wrote it" },
+    { v: "Cpy-Strategist", d: "from the brief" },
+    { v: "Cpy-Bank",       d: "taken from the Notion copy bank" },
+    { v: "Cpy-Claude",     d: "AI-written, human-checked" },
+  ],
+
+  // Visual formats. Groups mirror the Notion "Static Formats & Diversity Guide".
+  // `n` = the Notion menu number where one exists. Names are the Notion names minus illegal chars.
+  formatGroups: [
+    { group: "Weekly menu (Notion 1-18)", items: [
+      { v: "Specs Table",        n: 1,  d: "product spec sheet as the ad" },
+      { v: "Spinning Wheel",     n: 2,  d: "prize wheel landing on the offer" },
+      { v: "Media Article",      n: 3,  d: "news or magazine article mock" },
+      { v: "Sorry Letter",       n: 4,  d: "apology / letter from the brand (runs twice weekly)" },
+      { v: "Testimonials",       n: 5,  d: "review cards, stars, quotes" },
+      { v: "Arcade Machine",     n: 6,  d: "slot / claw / arcade cabinet" },
+      { v: "Apple Note",         n: 7,  d: "iPhone Notes app screenshot" },
+      { v: "Meme",               n: 8,  d: "borrowed meme template" },
+      { v: "Dont Buy",           n: 9,  d: "DON'T BUY XX pattern interrupt" },
+      { v: "We Messed Up",       n: 10, d: "confession headline, overstock / mistake" },
+      { v: "iPhone Story",       n: 11, d: "IG story UI with stickers" },
+      { v: "Billboard Street",   n: 12, d: "ad mocked onto a street billboard" },
+      { v: "Reddit",             n: 13, d: "r/ thread with upvotes and replies" },
+      { v: "Cartoon Drawing",    n: 14, d: "illustrated / comic style" },
+      { v: "iPhone Popup",       n: 15, d: "REMINDER / system popup on a phone" },
+      { v: "iMessage",           n: 16, d: "text-message thread" },
+      { v: "INFO Style",         n: 17, d: "steps + labels, minimal text" },
+      { v: "Compared At",        n: 18, d: "price comparison, ours vs compared-at" },
+    ]},
+    { group: "Bonus shelf (Notion 19-34)", items: [
+      { v: "Email",              n: 19, d: "forwarded email / inbox screenshot" },
+      { v: "Big Word Hero",      n: 20, d: "one giant word carries the frame" },
+      { v: "Find Yours",         n: 21, d: "grid: which one is you" },
+      { v: "Use-Case Cloud",     n: 22, d: "product in the middle, uses around it" },
+      { v: "Icon Grid",          n: 23, d: "benefits as an icon grid" },
+      { v: "Persona Callout",    n: 24, d: "'for the guy who...' callout" },
+      { v: "Iceberg",            n: 25, d: "what you see vs what's underneath" },
+      { v: "Would You Rather",   n: 26, d: "two-choice poll" },
+      { v: "Emoji Math",         n: 27, d: "emoji + emoji = product" },
+      { v: "Stat Stack",         n: 28, d: "stacked numbers" },
+      { v: "Money-Back Timeline",n: 29, d: "guarantee as a timeline (blocked until terms confirmed)" },
+      { v: "Casting Call",       n: 30, d: "wanted / casting poster" },
+      { v: "Search History",     n: 31, d: "Google / browser search history" },
+      { v: "Story Comic",        n: 32, d: "multi-panel comic strip" },
+      { v: "Seasonal Diorama",   n: 33, d: "miniature scene for the season" },
+      { v: "3D Spokesperson",    n: 34, d: "3D character presents the product" },
+    ]},
+    { group: "Library extras (proven or in use)", items: [
+      { v: "Product Hero",       d: "clean product shot + headline (was 'Promotional')" },
+      { v: "Lifestyle Photo",    d: "product in a real scene, hands, grill, board" },
+      { v: "Long-Form Copy",     d: "product in a corner, real paragraph copy (NK147 device)" },
+      { v: "Sticky Note",        d: "handwritten note stuck on the product" },
+      { v: "Whiteboard",         d: "hand-drawn explanation on a board" },
+      { v: "Annotation Overlay", d: "marker circles and arrows on a photo" },
+      { v: "Stock Bar",          d: "low-stock progress bar / inventory UI" },
+      { v: "Us vs Them",         d: "ours right, theirs left" },
+      { v: "Before After",       d: "same outcome, two moments" },
+      { v: "Split Screen",       d: "two halves, one message" },
+      { v: "Receipt",            d: "receipt / invoice mock" },
+      { v: "Checklist",          d: "ticked list next to the product" },
+      { v: "Handwritten Note",   d: "paper note, pen, not a Post-it" },
+      { v: "Missing Poster",     d: "lost / wanted poster parody" },
+      { v: "Collector Card",     d: "trading-card layout" },
+      { v: "Membership Card",    d: "club / VIP card" },
+      { v: "Movie Poster",       d: "film poster layout" },
+      { v: "Typography Poster",  d: "type-only poster" },
+      { v: "Retro Poster",       d: "vintage ad style" },
+      { v: "Blueprint",          d: "technical drawing of the knife" },
+      { v: "Comment Reply",      d: "reply to a comment / AMA" },
+      { v: "Google Search",      d: "search bar with autocomplete" },
+      { v: "ChatGPT Chat",       d: "AI chat conversation" },
+      { v: "Trustpilot",         d: "review-platform UI" },
+      { v: "Breaking News",      d: "news chyron / ticker" },
+      { v: "Native Post",        d: "looks like an organic post" },
+      { v: "Text on Skin",       d: "copy written on a hand or arm" },
+      { v: "Venn Diagram",       d: "two circles, product in the overlap" },
+      { v: "Myth vs Fact",       d: "two columns, myths struck through" },
+      { v: "Tier List",          d: "S/A/B/C ranking" },
+      { v: "Crossed Out",        d: "pains struck through in red" },
+      { v: "X Signs",            d: "'5 signs your knives are done'" },
+      { v: "Warning Label",      d: "hazard / side-effects label" },
+      { v: "Zero Stars",         d: "a bad review reframed" },
+      { v: "Bundle Stack",       d: "what's in the box, what it's worth" },
+      { v: "X Reasons",          d: "numbered reasons list" },
+      { v: "Carousel Cover",     d: "first slide of a carousel" },
+      { v: "Surreal Scale",      d: "giant knife in a real scene" },
+      { v: "Warehouse Shot",     d: "overstock / crates / shelves" },
+      { v: "Toy Packaging",      d: "knife as an action figure / toy box" },
+    ]},
+  ],
+
+  media: [
+    { v: "Gen-AI",    d: "main visual is AI generated" },
+    { v: "Gen-AIMix", d: "AI visual + real product photo composited" },
+    { v: "Gen-Photo", d: "real photograph / photoshoot" },
+    { v: "Gen-3D",    d: "3D render" },
+    { v: "Gen-UI",    d: "device or app mock (Notes, iMessage, Reddit, search)" },
+    { v: "Gen-Drawn", d: "illustration, cartoon, whiteboard, handwriting" },
+  ],
+
+  text: [
+    { v: "Txt-Only",  d: "words are the ad, no product visual" },
+    { v: "Txt-Led",   d: "headline dominates, product supports" },
+    { v: "Txt-Light", d: "visual leads, a line or two of copy" },
+  ],
+
+  compare: [
+    { v: "Cmp-None",      d: "no side-by-side" },
+    { v: "Cmp-Product",   d: "our knife vs theirs / vs the old one / vs our other knife" },
+    { v: "Cmp-Situation", d: "before vs after, with vs without, then vs now" },
+    { v: "Cmp-Emotion",   d: "frustration vs relief, embarrassment vs pride" },
+  ],
+
+  shot: [
+    { v: "Shot-Hero",    d: "knife alone, clean, front or angled" },
+    { v: "Shot-InHand",  d: "held, not cutting" },
+    { v: "Shot-InUse",   d: "cutting, on the board, on the grill" },
+    { v: "Shot-Flatlay", d: "top-down arrangement" },
+    { v: "Shot-Set",     d: "several knives as a set / display" },
+    { v: "Shot-Detail",  d: "macro: edge, handle, engraving" },
+    { v: "Shot-None",    d: "no product visual" },
+  ],
+
+
+  human: [
+    { v: "Hum-Happy",    d: "a person visibly happy with the knife (smile, pride)" },
+    { v: "Hum-Reaction", d: "a person reacting: shock, surprise, disbelief, laughing" },
+    { v: "Hum-Neutral",  d: "a person or hands, no expression" },
+    { v: "Hum-None",     d: "no person" },
+  ],
+
+  palette: [
+    { v: "Pal-Dark",  d: "dark ground (black, charcoal, forge)" },
+    { v: "Pal-Light", d: "light ground (white, paper, cream)" },
+    { v: "Pal-Color", d: "saturated colour ground (orange, blue, red)" },
+    { v: "Pal-Photo", d: "the photo is the ground" },
+  ],
+
+  fidelity: [
+    { v: "Fid-Hi", d: "polished, brand-grade" },
+    { v: "Fid-Lo", d: "rough on purpose: native, screenshot, handwritten, meme" },
+  ],
+
+  category: [
+    { v: "New",   d: "net-new idea" },
+    { v: "Ite",   d: "iteration of our own ad" },
+    { v: "Adapt", d: "adapted from another brand (put the brand in Adapted from)" },
+  ],
+
+  // Brands we swipe from. Prefix Src- is added automatically.
+  sourceBrands: [
+    "Coolina", "DrSquatch", "Ridge", "VionB", "Emmafy", "HexClad", "Smooche", "Hike", "Hears",
+    "Holo", "Gruns", "Jones Road", "True Classic", "Dalstrong", "Huusk", "Simple Modern", "Other",
+  ],
+
+  ratio: ["1x1", "4x5", "9x16"],
+
+  // Old (v1) values -> new values, used when an old name is pasted or a legacy frame is selected.
+  alias: {
+    avatar: {"MIKE - BBQ KING":"MIKE","BBQ Guy":"MIKE","Real Men":"MIKE","Husband":"MIKE","JOHN - KNIFE COLLECTOR":"JOHN","JOHN - THE KNIFE COLLECTOR":"JOHN","Collector Guy":"JOHN","STEVE - HOMECOOK":"STEVE","STEVE - CHEF / HOMECOOK":"STEVE","Homecooks":"STEVE","Chef Guy":"STEVE","Wife":"SARAH","SARAH - THE WIFE":"SARAH","Mother":"SARAH","DON - HUNTER-BUSCRAFTER":"DON","DON - HUNTER - BUSCRAFTER":"DON","DON - THE HUNTER/BUSHCRAFT":"DON","COLE - THE CAMPER-BUSHCRAFT":"COLE","COLE - THE CAMPER - BUSHCRAFT":"COLE","COLE - THE CAMPER/BUSHCRAFT":"COLE","DANA - KNIFE SHARPENER":"DANA","VANCE- The Opportunist":"VANCE","DARIEN - PROUD PARENTS":"DARIEN","General":"","Multi":"","GENERAL":"","Knife":"","Hand":""},
+    format: {"Promotional":"Product Hero","Generalist":"Product Hero","Knife Photoshoot":"Product Hero","3D Render":"Product Hero","Sorry Message":"Sorry Letter","Apology Letter + Offer":"Sorry Letter","Apology-Transparency":"Sorry Letter","Scarcity Letter":"Sorry Letter","Meme Style":"Meme","Drawing Style":"Cartoon Drawing","Cartoon Comic":"Story Comic","Reminder iPhone":"iPhone Popup","REMINDER iPhone Popup":"iPhone Popup","Fake System Popup":"iPhone Popup","Sorry / Letter":"Sorry Letter","Cartoon / Drawing":"Cartoon Drawing","DON'T BUY XX":"Dont Buy","Don't Buy":"Dont Buy","Progress-Bar Stock Indicator":"Stock Bar","Whiteboard Comparison":"Whiteboard","Hand-Drawn Annotation Overlay":"Annotation Overlay","Newspaper":"Media Article","Lifestyle Photoshoot":"Lifestyle Photo","Lifestyle":"Lifestyle Photo","Sticky Notes":"Sticky Note","Sticky-Note-on-Product Lifestyle Photo":"Sticky Note","IOS Note":"Apple Note","Notebook":"Handwritten Note","Over Stocked Warehouse":"Warehouse Shot","Warehouse Shot + Badge":"Warehouse Shot","Billboard":"Billboard Street","Billboard Mockup":"Billboard Street","Checklist + Knife + Offer":"Checklist","Product Comparison":"Us vs Them","Comparison":"Us vs Them","A.I. Conversation":"ChatGPT Chat","Review":"Testimonials","Product Blueprint":"Blueprint","Surreal Scale Visual":"Surreal Scale","Missing-Poster Parody":"Missing Poster","Comment-Reply Q&A":"Comment Reply","Native AMA Comment Q&A":"Comment Reply","Carousel Cover Slide":"Carousel Cover","Info Style":"INFO Style","Cartoon/Drawing":"Cartoon Drawing","Toy Set":"Toy Packaging","Editorial / Article Promo":"Media Article","Before & After Concept":"Before After","News Headline on Kitchen":"Breaking News","News Headline on Jungle Findings":"Breaking News","News Headline on BBQ day":"Breaking News","Kitchen Lifestyle":"Lifestyle Photo","Evergreen":"","Humor":"","Static":""},
+    offer: {"None":"NoOffer","NA":"NoOffer","40% + Free Gifts":"40%+Gifts"},
+    lp: {"Listicle":"6r-General","Collection":"Collection Page","Lifestyle":"PDP","Editorial":"6r-General","Educational":"6r-General"},
+    product: {"Bjorn Santoku":"BJORN Santoku","SANTOKU":"BJORN Santoku","Santoku":"BJORN Santoku","Born Santoku":"BJORN Santoku","Blackout":"LOKI Blackout","Feather Knife":"Feather","LOKI Reaper ":"LOKI Reaper","ODIN 6 Chef":"ODIN 6 Boss","ODIN 8 Chef":"ODIN 8 Boss","Odin Hybrid Cleaver":"ODIN Hybrid Cleaver","Rolling Knife Sharpener":"Rolling Sharpener","LOKI Viking":"LOKI","Loki":"LOKI","Gunnar Cleaver":"GUNNAR Cleaver","Gunnar Butcher":"GUNNAR Butcher","Gunnar Butcher XXL":"GUNNAR Butcher XXL","Multi-JOHN":"Multi","ODIN SET":"ODIN Set"},
+    angle: {"VALUE OFFER":"Value Offer","Offer Value":"Value Offer","Bundle Offer":"Value Offer","Craftmanship":"Craftsmanship","Craftsmanship Listicle":"Craftsmanship","Premium Quality":"Craftsmanship","SCARCITY":"Scarcity","Late Notice":"Scarcity","Exclusivity":"Scarcity","Brand Awareness":"Brand Story","Brand Authenticity":"Brand Story","Brand Identity":"Identity","Lifestyle":"Identity","Lifestyle Promotion":"Identity","Product Focus":"Product Proof","Product Feature":"Product Proof","Product Benefit":"Product Proof","Product Launch":"Product Proof","Testimonial":"Social Proof","Objection Handling":"Objection","Collectibility":"Collection","Collection Showcase":"Collection","Ownership":"Collection","Educational":"Education","Problem / Solution":"Upgrade"},
+    category: {"Iteration":"Ite","Net New":"New","Adaptation":"Adapt"},
+  },
+
+  // Characters that can never appear inside a field.
+  illegal: /[\/\\:?*"<>|_]/g,
+};
+
+
+
+// NK VIDEO naming convention v2.2 - menus for the web builder's Video tab.
+// Same rules as vocab.js: no / \ : ? * " < > | _ inside a value; every value unique across fields.
+// VID is written automatically after the ID. It is not a field.
+
+const NK_VOCAB_VIDEO = {
+  convention: "video 2.2 (2026-09-21)",
+  delimiter: "_",
+  marker: "VID",
+  fields: [
+    { key: "id",        group: "Who & what",  label: "Creative ID",     kind: "id",     help: "NK + 3 digits, the next free number in the Evergreen Video database. Never reuse." },
+    { key: "type",      group: "Who & what",  label: "Type",            kind: "select", list: "type",      help: "How the video is made.", remember: true },
+    { key: "concept",   group: "Who & what",  label: "Concept",         kind: "text",   help: "The brief title, 30 characters max. Illegal characters are stripped.", wide: true },
+    { key: "hook",      group: "Who & what",  label: "Hooks",           kind: "hooks",  help: "How many hook rows the brief has. One file name per hook comes out below." },
+    { key: "body",      group: "Who & what",  label: "Body cut",        kind: "select", list: "body",      help: "A = first cut of the body. The letter moves only when the body is re-edited." },
+    { key: "strategist",group: "Who & what",  label: "Strategist",      kind: "select", list: "strategist",help: "Who wrote the brief.", remember: true },
+    { key: "editor",    group: "Who & what",  label: "Editor",          kind: "select", list: "editor",    help: "Who cuts the video. EDITOR if not assigned yet.", remember: true },
+    { key: "date",      group: "Who & what",  label: "Date",            kind: "date",   help: "MM.DD.YY, the delivery date." },
+    { key: "product",   group: "Brief",       label: "Product",         kind: "select", list: "product",   help: "Hero product. Multi when 2+ knives share the video.", remember: true },
+    { key: "avatar",    group: "Brief",       label: "Avatar",          kind: "select", list: "avatar",    help: "Who the ad talks to. Always ONE named avatar.", remember: true },
+    { key: "offer",     group: "Brief",       label: "Offer shown",     kind: "select", list: "offer",     help: "The offer said or shown in the video.", remember: true },
+    { key: "lp",        group: "Brief",       label: "Landing page",    kind: "select", list: "lp",        help: "Where the click goes.", remember: true },
+    { key: "market",    group: "Brief",       label: "Market",          kind: "select", list: "market",    help: "Which store it is built for.", remember: true },
+    { key: "event",     group: "Brief",       label: "Event / season",  kind: "select", list: "event",     help: "Evergreen when none.", remember: true },
+    { key: "funnel",    group: "Brief",       label: "Funnel",          kind: "select", list: "funnel",    help: "Top finds new people (First Click). Middle warms them. Bottom closes them.", remember: true },
+    { key: "category",  group: "Origin",      label: "Category",        kind: "select", list: "category",  help: "New = net-new idea. Ite = iteration of our own ad. Adapt = adapted from another brand." },
+    { key: "source",    group: "Origin",      label: "Adapted from",    kind: "source", help: "Only when Category is Adapt: the brand the mechanic came from. Src-None otherwise." },
+    { key: "iteration", group: "Origin",      label: "Iteration type",  kind: "select", list: "iteration", help: "What changed versus the original. Ite-None when Category is New or Adapt." },
+    { key: "creator",   group: "Origin",      label: "Creator",         kind: "select", list: "creator",   help: "The person on camera or reading the lines. Not the editor." },
+    { key: "angle",     group: "Message",     label: "Angle",           kind: "select", list: "angle",     help: "What the ad argues, the reason to buy. One per ad." },
+    { key: "hookTactic",group: "Message",     label: "Hook tactic",     kind: "select", list: "hookTactic",help: "How the first line grabs. Pick the tactic of hook 1; note the others in the brief." },
+    { key: "structure", group: "Message",     label: "Structure",       kind: "select", list: "structure", help: "How the script is built, the shape of the story." },
+    { key: "tone",      group: "Message",     label: "Tone",            kind: "select", list: "tone",      help: "The voice of the copy." },
+    { key: "proof",     group: "Message",     label: "Proof element",   kind: "select", list: "proof",     help: "Which trust device is in the script." },
+    { key: "offerTiming",group:"Message",     label: "Offer timing",    kind: "select", list: "offerTiming",help:"Where the offer lands. House rule is mid or late." },
+    { key: "productReveal",group:"Message",   label: "Product reveal",  kind: "select", list: "productReveal",help:"When the knife is named." },
+    { key: "voice",     group: "Production",  label: "Voice",           kind: "select", list: "voice",     help: "Who speaks." },
+    { key: "face",      group: "Production",  label: "Face on camera",  kind: "select", list: "face",      help: "Is there a person, and do they talk to camera." },
+    { key: "length",    group: "Production",  label: "Length (seconds)",kind: "length", help: "Real seconds of the delivered file. Leave empty for Len-TBD until the cut exists." },
+  ],
+
+  type: [
+    { v: "AI-VO", d: "AI voiceover over footage" }, { v: "UGC", d: "creator-shot, creator voice" }, { v: "Talking-Head", d: "a person speaks to camera, produced" },
+    { v: "Mashup", d: "clips from several sources stitched" }, { v: "AI-Cartoon", d: "animated cartoon" }, { v: "AI-Animation", d: "AI-generated motion" },
+    { v: "ASMR", d: "sound and cut, no voice" }, { v: "Text-Over", d: "text on footage, no voice" }, { v: "Static-to-Video", d: "a static ad animated" },
+    { v: "Green-Screen", d: "presenter over content" }, { v: "LFC", d: "low-fidelity creator clone" }, { v: "GIF", d: "short loop" },
+  ],
+  body: ["A", "B", "C", "D", "E", "F"],
+  strategist: ["Andy", "Mark", "Callum", "Claude", "Mauro"],
+  editor: ["EDITOR", "Umar", "Hammad", "Onyeka", "Anas", "Hasnain", "Renniel", "Naveed", "Huzaifa"],
+  product: [
+    "Feather", "BJORN Santoku", "LOKI", "LOKI Blackout", "LOKI Reaper", "LOKI Berserker",
+    "BJORN Utility", "BJORN Chef", "ODIN 6 Boss", "ODIN 8 Boss", "ODIN Hybrid Cleaver", "ODIN Set",
+    "RAGNAR Butcher", "RAGNAROK Rising Butcher", "VALHALLA Chef", "VALHALLA Butcher",
+    "Tiger Cleaver", "Dragon Cleaver", "GUNNAR Cleaver", "GUNNAR Butcher", "GUNNAR Butcher XXL",
+    "Rolling Sharpener", "Magnetic Holder", "Sheath", "Multi",
+  ],
+  avatar: [
+    { v: "MIKE", d: "MIKE - BBQ King" }, { v: "JOHN", d: "JOHN - Knife Collector" }, { v: "STEVE", d: "STEVE - Home Cook" },
+    { v: "SARAH", d: "SARAH - The Wife (gifter)" }, { v: "VANCE", d: "VANCE - The Opportunist (deal seeker)" }, { v: "DON", d: "DON - The Hunter" },
+    { v: "COLE", d: "COLE - The Camper / Bushcraft" }, { v: "DANA", d: "DANA - Knife Sharpener" }, { v: "DARIEN", d: "DARIEN - Proud Parents" },
+  ],
+  offer: ["B2G2", "B2G1", "B1G1", "64%OFF", "56%OFF", "40%+Gifts", "Mystery Gift", "Free Gift", "NoOffer"],
+  lp: [
+    { v: "PDP", d: "product page" }, { v: "6r-General", d: "6 Reasons listicle, general" }, { v: "6r-Feather", d: "6 Reasons, Feather" },
+    { v: "6r-Blackout", d: "6 Reasons, LOKI Blackout" }, { v: "6r-Santoku", d: "6 Reasons, BJORN Santoku" }, { v: "6r-Sharpener", d: "6 Reasons, Rolling Sharpener" },
+    { v: "3r-General", d: "3 Reasons, general" }, { v: "7r-Blackout", d: "7 Reasons, Blackout" }, { v: "Collection Page", d: "collection page" },
+    { v: "Offer Page", d: "offer / promo page" }, { v: "BYS", d: "build your set" }, { v: "VIP", d: "VIP free-gift page" },
+  ],
+  market: [
+    { v: "Mkt-US", d: "United States" }, { v: "Mkt-UK", d: "United Kingdom" }, { v: "Mkt-AU", d: "Australia" },
+    { v: "Mkt-CA", d: "Canada" }, { v: "Mkt-DE", d: "Germany" }, { v: "Mkt-NL", d: "Netherlands" }, { v: "Mkt-All", d: "ships to every store unchanged" },
+  ],
+  event: [
+    "Evergreen", "Labor Day Sale", "Black Friday", "Cyber Monday", "BFCM", "Christmas", "New Year",
+    "Valentines", "Presidents Day", "Easter", "Mothers Day", "Memorial Day", "Fathers Day",
+    "July 4th", "Prime Day", "Summer Sale", "Grilling Season", "EOFY", "Anniversary", "Product Launch", "Restock",
+  ],
+  funnel: [
+    { v: "Fun-TOF", d: "top of funnel: finds new people, judged on First Click ROAS" },
+    { v: "Fun-MOF", d: "middle of funnel: warms people who saw us once" },
+    { v: "Fun-BOF", d: "bottom of funnel: closes people who already know us" },
+  ],
+  category: [
+    { v: "New", d: "net-new idea" }, { v: "Ite", d: "iteration of our own ad" }, { v: "Adapt", d: "adapted from another brand (put the brand in Adapted from)" },
+  ],
+  sourceBrands: ["Coolina", "DrSquatch", "Ridge", "VionB", "Emmafy", "HexClad", "Smooche", "Hike", "Hears", "Holo", "Gruns", "Jones Road", "True Classic", "Dalstrong", "Huusk", "Simple Modern", "Other"],
+  iteration: [
+    { v: "Ite-None", d: "not an iteration" },
+    { v: "Ite-Hook", d: "new openings, body locked" }, { v: "Ite-Body", d: "same hook, new body" },
+    { v: "Ite-Product", d: "same script, other knife" }, { v: "Ite-Persona", d: "same script, other avatar" },
+    { v: "Ite-Editor", d: "same brief, another editor's cut" }, { v: "Ite-Voice", d: "same cut, different voice (male to female, AI to creator)" },
+    { v: "Ite-Music", d: "same cut, other track" }, { v: "Ite-Offer", d: "same cut, other offer line" },
+    { v: "Ite-Market", d: "localised copy" }, { v: "Ite-CTA", d: "only the ending changes" },
+    { v: "Ite-Length", d: "shorter or longer cut" }, { v: "Ite-Reskin", d: "same everything, new visuals" },
+  ],
+  creator: [
+    { v: "Cre-None", d: "no creator, AI voice only" }, { v: "Cre-Dustin", d: "" }, { v: "Cre-Ryan", d: "" }, { v: "Cre-Kelly", d: "" }, { v: "Cre-Carina", d: "" },
+    { v: "Cre-Matt", d: "" }, { v: "Cre-Cameron", d: "" }, { v: "Cre-Samantha", d: "" }, { v: "Cre-SeanL", d: "" }, { v: "Cre-Amir", d: "" }, { v: "Cre-ZackD", d: "" }, { v: "Cre-Other", d: "" },
+  ],
+  angle: [
+    { v: "Value Offer",   d: "the deal is the argument (four for two)" },
+    { v: "Cost Logic",    d: "the maths per use or versus what you already spend (Price Breakdown, Paying the Butcher)" },
+    { v: "Regret",        d: "a customer who paid full price warns you (Pissed Off, This Deal Annoyed Me)" },
+    { v: "Craftsmanship", d: "hand-forged, 3 months to make, the maker's hands" },
+    { v: "Scarcity",      d: "stock, batch, last call, back in stock" },
+    { v: "Product Proof", d: "what the blade does: the cut test, the grip, sharp out of the box" },
+    { v: "Social Proof",  d: "others already bought it, love it, steal it (Most Stolen, Taking Over)" },
+    { v: "Brand Story",   d: "who we are, transparency, we made too many" },
+    { v: "Industry Truth",d: "the knife industry is lying to you, built to dull (Real Knife, Nobody Tells You This)" },
+    { v: "Identity",      d: "the kind of man who owns it (BBQ King, Earns Its Place, Viking)" },
+    { v: "Relationship",  d: "the knife changes the couple or family dynamic (Save the marriage, Wife Will Make You Cook)" },
+    { v: "Collection",    d: "display, centerpiece, the shelf" },
+    { v: "Upgrade",       d: "your old knife against this one (Throw my Knives)" },
+    { v: "Versatility",   d: "one knife does every job and replaces the drawer (One Blade Does It All, Drawer Audit)" },
+    { v: "Gifting",       d: "buying it for someone else" },
+    { v: "Objection",     d: "answers a doubt: too expensive, too cheap, is this a scam" },
+    { v: "Humor",         d: "the joke carries it" },
+    { v: "Education",     d: "teaches first, sells second (Knife Hack, Safe Knife)" },
+    { v: "Durability",    d: "the last knife you buy (Buy Once For Life)" },
+    { v: "Pain Point",    d: "the daily damage a dull knife does (What if, Wrist pain, Hunts ruined)" },
+    { v: "Return",        d: "the owner cannot stop using it; the return request or the complaint is the proof (Return his knife, Obsessed Husband)" },
+    { v: "Legacy",        d: "outlives you, gets passed down (The Heirloom, The Will, Somebody Is Going To Inherit This)" },
+  ],
+  hookTactic: [
+    { v: "Bold Claim", d: "a flat statement" }, { v: "Question", d: "asks the viewer something" }, { v: "Confession", d: "we messed up, I lied" },
+    { v: "Warning", d: "don't buy, careful" }, { v: "Number", d: "a figure leads" }, { v: "Callout", d: "names who this is for" },
+    { v: "Contrarian", d: "the opposite of what ads say" }, { v: "Story", d: "starts mid-scene, first person" }, { v: "Command", d: "tells the viewer what to do" },
+    { v: "Joke", d: "the opening is a gag" }, { v: "Shock", d: "an outrageous line" }, { v: "Roast", d: "insults the viewer or his old knife" },
+    { v: "Secret", d: "lets you in on something nobody says" }, { v: "Doubt", d: "opens on the doubt itself: you think this is a scam" },
+  ],
+  structure: [
+    { v: "Str-Story", d: "a person, a situation, a turn (Return his knife, Wrong Address)" }, { v: "Str-Listicle", d: "numbered reasons (5 Reasons)" },
+    { v: "Str-Apology", d: "we made a mistake, here is what we do (We're sorry)" }, { v: "Str-Symptom", d: "stacks daily pains, then the cause (What if)" },
+    { v: "Str-Offer-First", d: "the deal in the first 8 seconds, then permission" }, { v: "Str-Testimonial", d: "customers' words carry it" },
+    { v: "Str-Skit", d: "a played scene with a punchline (Phone Call, Fake Amazon)" }, { v: "Str-Dialogue", d: "two voices talking it out" },
+    { v: "Str-Comparison", d: "ours next to theirs or the old one" }, { v: "Str-Explainer", d: "walks through how it works" },
+    { v: "Str-Warning", d: "opens on don't, then who should" }, { v: "Str-Reaction", d: "people reacting, stitched" },
+    { v: "Str-News", d: "news format" }, { v: "Str-Founder", d: "the brand or maker tells its story" }, { v: "Str-Tutorial", d: "teaches a technique" },
+    { v: "Str-ASMR", d: "sound and cut, no voice" }, { v: "Str-Unboxing", d: "the box, the reveal, the first cut" }, { v: "Str-Song", d: "the script is sung or set to a music video (Wellerman, Singing Gift, AI Music Video)" },
+  ],
+  tone: [
+    { v: "Tone-Blunt", d: "raw, short, the real NK voice" }, { v: "Tone-Funny", d: "joke, wink" }, { v: "Tone-Urgent", d: "deadline, last units" },
+    { v: "Tone-Warm", d: "gift, family, heirloom" }, { v: "Tone-Serious", d: "craft, proof, no jokes" },
+  ],
+  proof: [
+    { v: "Prf-None", d: "no trust device" }, { v: "Prf-Reviews", d: "customer words or a star rating" }, { v: "Prf-Count", d: "a number: 100,000 customers, sold out 15 times" },
+    { v: "Prf-Guarantee", d: "warranty, returns" }, { v: "Prf-Press", d: "media, as seen in" }, { v: "Prf-Maker", d: "the forge, the blacksmith shown as proof of craft" }, { v: "Prf-Demo", d: "the cut itself is the proof" },
+  ],
+  offerTiming: [
+    { v: "Off-First", d: "offer in the first 10 seconds" }, { v: "Off-Mid", d: "40 to 70% through" }, { v: "Off-Late", d: "after 70%" }, { v: "Off-Absent", d: "no offer in the video" },
+  ],
+  productReveal: [
+    { v: "Rev-Early", d: "the knife is named in the hook" }, { v: "Rev-Mid", d: "named before the halfway point" }, { v: "Rev-Late", d: "named after it" },
+  ],
+  voice: [
+    { v: "Voice-AI-M", d: "AI male" }, { v: "Voice-AI-F", d: "AI female" }, { v: "Voice-Creator-M", d: "a real man" }, { v: "Voice-Creator-F", d: "a real woman" }, { v: "Voice-None", d: "no voice" },
+  ],
+  face: [
+    { v: "Face-Talking", d: "a person speaks to camera" }, { v: "Face-Broll", d: "a person appears in footage, nobody speaks to camera" },
+    { v: "Face-Hands", d: "hands only" }, { v: "Face-AI", d: "an AI person" }, { v: "Face-None", d: "product and footage only" },
+  ],
+
+  alias: {
+    avatar: {"MIKE- BBQ KING":"MIKE","MIKE - BBQ KING":"MIKE","BBQ Guy":"MIKE","JOHN - KNIFE COLLECTOR":"JOHN","Collector Guy":"JOHN","STEVE - HOMECOOK":"STEVE","Homecooks":"STEVE","SARAH - THE WIFE":"SARAH","SARAH - WIFE":"SARAH","Wife":"SARAH","VANCE- The Opportunist":"VANCE","VANCE - VALUE OPPORTUNIST":"VANCE","DON - THE HUNTER/BUSHCRAFT":"DON","DON - HUNTERBUSCRAFTER":"DON","COLE - THE CAMPER/BUSHCRAFT":"COLE","COLE - CAMPERBUSHCRAFT":"COLE","DANA - KNIFE SHARPENER":"DANA","DARIEN - PROUD PARENTS":"DARIEN","General":"","Multi":"","Real Men":"MIKE"},
+    type: {"AI VO":"AI-VO","AI-VO":"AI-VO","UGC-Dustin":"UGC","UGC-Ryan":"UGC","UGC-Kelly":"UGC","UGC Mashup":"Mashup","AI Cartoon":"AI-Cartoon","AI Animation":"AI-Animation","Text Over":"Text-Over","Avatar IA":"AI-Animation","Animated":"AI-Animation","No VO":"Text-Over","Listicle":"AI-VO","Generalist":"AI-VO"},
+    lp: {"6 Reasons - General":"6r-General","6 Reasons - Santoku":"6r-Santoku","6 Reasons - Outdoor":"6r-General","6 Reasons - Sharpener":"6r-Sharpener","Listicle":"6r-General","Offer Page":"Offer Page"},
+    offer: {"NA":"NoOffer","None":"NoOffer","40% + Free Gifts":"40%+Gifts"},
+    category: {"Iteration":"Ite","Net New":"New","Adaptation":"Adapt"},
+    product: {"SANTOKU":"BJORN Santoku","Santoku":"BJORN Santoku","ODIN SET":"ODIN Set","Feather Knife":"Feather","LOKI Viking":"LOKI","Rolling Knife Sharpener":"Rolling Sharpener","Multi-JOHN":"Multi"},
+  },
+  illegal: /[\/\\:?*"<>|_]/g,
+};
+
+
+
+const MODE = "web"; // "figma" or "web"
+const MENU_URL_DEFAULT = "https://script.google.com/macros/s/AKfycbyIBeDFBLOMdpltwrM7RDeeTAzP3ee07mqZ5Cu_nWUWnPPPTSZMDV5pdplV7QBNL-rs/exec"; // filled by the Apps Script host, empty otherwise
+const LOCK = "video"; // "static" or "video" pins the page to one convention and hides the tabs
+</script>
+<script>
+(function(){
+  const isFigma = MODE === "figma";
+  document.body.classList.toggle("figma", isFigma);
+  document.getElementById("modechip").textContent = isFigma ? "Figma plugin" : "Web";
+  const tabs = document.getElementById("tabs");
+  const hasVideo = typeof NK_VOCAB_VIDEO !== "undefined";
+  if (isFigma || !hasVideo || LOCK === "static" || LOCK === "video") tabs.classList.add("hidden");
+
+  const form = document.getElementById("form");
+  const $ = (n) => form.elements[n];
+  const opt = (x) => typeof x === "string" ? { v: x, d: "" } : x;
+  const groupClass = (g) => "g-" + g.toLowerCase().replace(/[^a-z]/g, "").replace("whowhat", "who");
+  const fmtDate = (iso) => { if (!iso) return ""; const [y, m, d] = iso.split("-"); return `${m}.${d}.${y.slice(2)}`; };
+  const parseDate = (s) => { let m = /^(\d\d)\.(\d\d)\.(\d\d)$/.exec(s || ""); if (m) return `20${m[3]}-${m[1]}-${m[2]}`; m = /^(\d\d)(\d\d)(\d{2})$/.exec(s || ""); if (m) return `20${m[3]}-${m[1]}-${m[2]}`; m = /^(\d\d)(\d\d)(\d{4})$/.exec(s || ""); if (m) return `${m[3]}-${m[1]}-${m[2]}`; m = /^(\d\d)\.(\d\d)\.(\d{4})$/.exec(s || ""); if (m) return `${m[3]}-${m[1]}-${m[2]}`; return ""; };
+  const today = () => new Date().toISOString().slice(0, 10);
+  const el = (tag, attrs, ...kids) => { const e = document.createElement(tag); for (const k in attrs || {}) { if (k === "class") e.className = attrs[k]; else if (k === "text") e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]); } kids.forEach(c => c && e.appendChild(typeof c === "string" ? document.createTextNode(c) : c)); return e; };
+  const msgs = document.getElementById("msgs");
+  const say = (kind, text) => msgs.appendChild(el("div", { class: "msg " + kind, text }));
+  async function copyText(t, okText) { try { await navigator.clipboard.writeText(t); } catch (e) { const ta = el("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); } say("ok", okText || "Copied."); }
+
+  let V = NK_VOCAB;           // active vocabulary
+  let modeKey = "static";     // "static" | "video"
+  let pageNames = [];         // names of ad frames on the current Figma page
+  let selection = [];         // [{id,name,w,h}]
+  let lastPrefs = null;
+  const prefKey = () => "nk-name-prefs-" + modeKey;
+
+  // ---------- build the form from the vocab ----------
+  const label = (f, control, extra) => { const l = el("label", { class: "f" + (f.wide ? " wide" : "") }); l.appendChild(el("span", { class: "l" }, el("span", { text: f.label }), el("em", { id: "note-" + f.key }))); l.appendChild(control); if (extra) l.appendChild(extra); l.appendChild(el("span", { class: "hint", id: "hint-" + f.key })); return l; };
+  function makeSelect(name, items, placeholder) { const s = el("select", { name }); if (placeholder) s.appendChild(el("option", { value: "", text: placeholder })); items.map(opt).forEach(it => { const o = el("option", { value: it.v, text: it.d ? `${it.v}  -  ${it.d}` : it.v }); o.dataset.d = it.d || ""; s.appendChild(o); }); return s; }
+  function fillFormats(filter) {
+    const sel = $("format"); if (!sel) return; const cur = sel.value; sel.innerHTML = "";
+    const q = (filter || "").trim().toLowerCase();
+    (V.formatGroups || []).forEach(g => { const og = el("optgroup", { label: g.group }); let n = 0; g.items.forEach(i => { if (q && !(i.v + " " + (i.d || "")).toLowerCase().includes(q)) return; const o = el("option", { value: i.v, text: (i.n ? String(i.n).padStart(2, "0") + "  " : "") + i.v }); o.dataset.d = i.d || ""; og.appendChild(o); n++; }); if (n) sel.appendChild(og); });
+    if (cur && [...sel.options].some(o => o.value === cur)) sel.value = cur; else if (q && sel.options.length === 1) sel.selectedIndex = 0;
+  }
+
+  function buildForm() {
+    form.innerHTML = "";
+    const groups = []; V.fields.forEach(f => { if (!groups.includes(f.group)) groups.push(f.group); });
+    groups.forEach(g => {
+      const fs = el("fieldset", { id: "fs-" + groupClass(g) }); const fields = V.fields.filter(f => f.group === g);
+      fs.appendChild(el("legend", {}, el("span", { text: g }), el("span", { class: "n", text: fields.length + (fields.length === 1 ? " field" : " fields") })));
+      const grid = el("div", { class: "grid" }); fs.appendChild(grid);
+      fields.forEach(f => {
+        if (f.kind === "select") { const noPh = (f.list === "type" && modeKey === "static") || f.list === "version" || f.list === "body"; grid.appendChild(label(f, makeSelect(f.key, V[f.list], noPh ? "" : f.label + "..."))); }
+        else if (f.kind === "id") { const row = el("div", { class: "idrow" }, el("input", { type: "text", name: "id", maxlength: "8", placeholder: modeKey === "video" ? "NK498" : "K012" }), el("button", { type: "button", id: "nextid", title: "Next free number on this page", text: "Next" })); if (modeKey === "video") row.lastChild.classList.add("hidden"); grid.appendChild(label(f, row)); }
+        else if (f.kind === "date") grid.appendChild(label(f, el("input", { type: "date", name: "date" })));
+        else if (f.kind === "text") grid.appendChild(label(f, el("input", { type: "text", name: f.key, maxlength: "30", placeholder: "Make The Cut" })));
+        else if (f.kind === "hooks") grid.appendChild(label(f, el("input", { type: "number", name: "hooks", min: "1", max: "9", value: "3" })));
+        else if (f.kind === "length") grid.appendChild(label(f, el("input", { type: "number", name: "length", min: "1", max: "600", placeholder: "TBD" })));
+        else if (f.kind === "format") { const box = el("div", { class: "fmt" }, el("input", { type: "text", id: "fmtsearch", placeholder: "Type to filter: note, sorry, meme, reddit, billboard..." }), el("select", { name: "format", size: "7" }), el("div", { class: "desc", id: "fmtdesc" })); grid.appendChild(label(f, box)); }
+        else if (f.kind === "source") {
+          const wrapB = label({ key: "sourceBrand", label: "Adapted from brand", help: "" }, makeSelect("sourceBrand", V.sourceBrands, "Brand...")); wrapB.id = "srcbrandwrap";
+          const wrapO = label({ key: "sourceOther", label: "Brand name", help: "" }, el("input", { type: "text", name: "sourceOther", maxlength: "24", placeholder: "Brand" })); wrapO.id = "srcotherwrap";
+          grid.append(wrapB, wrapO);
+        }
+        else if (f.kind === "ratio") { const l = label(f, makeSelect("ratio", V.ratio, "")); fs.classList.add("hidden"); grid.appendChild(l); }
+      });
+      form.appendChild(fs);
+    });
+    form.appendChild(el("input", { type: "hidden", name: "menuUrl", value: "" }));
+    const det = el("details", { class: "legend" }, el("summary", { text: "What each field means (" + V.fields.length + " fields)" })); const tbl = el("table");
+    V.fields.forEach((f, i) => tbl.appendChild(el("tr", {}, el("td", { text: (i + 1) + ". " + f.key }), el("td", {}, el("b", { text: f.label }), " - " + f.help)))); det.appendChild(tbl); form.appendChild(det);
+    fillFormats(""); $("date").value = today();
+    if ($("format")) document.getElementById("fmtsearch").addEventListener("input", (e) => { fillFormats(e.target.value); render(); });
+    const nb = document.getElementById("nextid"); if (nb) nb.addEventListener("click", () => { $("id").value = nextId(prefixOf($("designer") && $("designer").value)); render(); });
+    if ($("designer")) $("designer").addEventListener("change", () => { $("id").value = nextId(prefixOf($("designer").value)); render(); });
+    document.getElementById("verchip").textContent = "v" + V.convention;
+    document.getElementById("subline").textContent = modeKey === "video" ? "Every field is a menu. One file name per hook comes out on the right. VID is written after the ID by itself." : "Every field is a menu. The name builds itself as you pick. Only the concept is typed. Red = still to pick. Copy the 1x1 and the 9x16 name below.";
+    document.title = modeKey === "video" ? "NK Video Name Builder" : "NK Static Name Builder";
+  }
+
+  // ---------- live menus from the Google Sheet ----------
+  function refill(name, items) { const sel = $(name); if (!sel) return; const cur = sel.value; const ph = sel.options[0] && sel.options[0].value === "" ? sel.options[0].textContent : ""; sel.innerHTML = ""; if (ph) sel.appendChild(el("option", { value: "", text: ph })); items.map(opt).forEach(it => { const o = el("option", { value: it.v, text: it.d ? `${it.v}  -  ${it.d}` : it.v }); o.dataset.d = it.d || ""; sel.appendChild(o); }); if ([...sel.options].some(o => o.value === cur)) sel.value = cur; }
+  function applyRemote(menus) {
+    let n = 0;
+    for (const key in menus) {
+      const items = menus[key]; if (!Array.isArray(items) || !items.length) continue;
+      if (key === "formatGroups") { if (V.formatGroups) { V.formatGroups = items; fillFormats(document.getElementById("fmtsearch") ? document.getElementById("fmtsearch").value : ""); n++; } continue; }
+      if (key === "sourceBrands") { V.sourceBrands = items.map(x => opt(x).v); refill("sourceBrand", V.sourceBrands); n++; continue; }
+      if (key === "designer") { if (V.designer) { V.designer = items.map(x => ({ v: opt(x).v, prefix: opt(x).d || opt(x).v[0] })); refill("designer", V.designer.map(d => d.v)); n++; } continue; }
+      if (!Array.isArray(V[key])) continue;
+      if (modeKey === "video" && (key === "type" || key === "angle" || key === "hook")) continue; // the sheet holds the static versions of these
+      V[key] = items; refill(key, items); n++;
+    }
+    return n;
+  }
+  async function loadRemote(url, quiet) {
+    url = (url || "").trim(); if (!url) return;
+    try { const r = await fetch(url + (url.includes("?") ? "&" : "?") + "menus=1", { cache: "no-store" }); if (!r.ok) throw new Error("HTTP " + r.status); const menus = await r.json(); const n = applyRemote(menus); if (!quiet) say("ok", `Menus loaded from the sheet: ${n} lists.`); }
+    catch (e) { if (!quiet) say("warn", "Could not load the live menus (" + e.message + "). Using the built-in ones."); }
+    render();
+  }
+
+  // ---------- name ----------
+  function ratioOf(w, h) { if (!w || !h) return ""; const r = w / h; const t = [["1x1", 1], ["4x5", .8], ["9x16", 9 / 16]]; let best = t[0]; t.forEach(x => { if (Math.abs(x[1] - r) < Math.abs(best[1] - r)) best = x; }); return Math.abs(best[1] - r) < 0.02 ? best[0] : ""; }
+  const prefixOf = (designer) => ((V.designer || []).find(d => d.v === designer) || {}).prefix || "";
+  function nextId(prefix) { if (!prefix) return ""; let max = 0; const re = new RegExp("^" + prefix + "(\\d{3,4})_"); pageNames.forEach(n => { const m = re.exec(n); if (m) max = Math.max(max, parseInt(m[1], 10)); }); return prefix + String(max + 1).padStart(3, "0"); }
+  const clean = (s) => (s || "").replace(V.illegal, " ").replace(/\s+/g, " ").trim();
+  function sourceToken() {
+    const c = $("category").value;
+    if (c === "Adapt") { const b = $("sourceBrand").value; if (b === "Other") { const o = clean($("sourceOther").value).replace(/\s+/g, ""); return o ? "Src-Other-" + o : ""; } return b ? "Src-" + b.replace(/\s+/g, "") : ""; }
+    return c ? "Src-None" : "";
+  }
+  function values() {
+    const v = {};
+    V.fields.forEach(f => {
+      if (f.kind === "id") v.id = clean($("id").value).replace(/\s/g, "").toUpperCase();
+      else if (f.kind === "date") v.date = fmtDate($("date").value);
+      else if (f.kind === "text") v[f.key] = clean($(f.key).value).slice(0, 30);
+      else if (f.kind === "source") v.source = sourceToken();
+      else if (f.kind === "ratio") v.ratio = "";
+      else if (f.kind === "hooks") v.hook = "H1";
+      else if (f.kind === "length") { const n = parseInt($("length").value, 10); v.length = n > 0 ? "Len-" + n : "Len-TBD"; }
+      else v[f.key] = $(f.key).value;
+    });
+    return v;
+  }
+  const tokensOf = (v) => { const t = []; V.fields.forEach(f => { if (f.key === "ratio") return; t.push(v[f.key]); if (f.key === "id" && V.marker) t.push(V.marker); }); return t; };
+  const baseName = (v) => tokensOf(v).join(V.delimiter);
+  const hookCount = () => Math.min(9, Math.max(1, parseInt(($("hooks") && $("hooks").value) || "1", 10)));
+  const withHook = (v, n) => baseName(Object.assign({}, v, { hook: "H" + n }));
+
+  function render() {
+    const v = values(); msgs.innerHTML = "";
+    const nameEl = document.getElementById("name"); nameEl.innerHTML = "";
+    const missing = [];
+    V.fields.forEach((f, i) => {
+      if (f.key === "ratio" && !isFigma && modeKey === "static") return;
+      const val = f.kind === "ratio" ? "{ratio}" : f.kind === "hooks" ? "H1..H" + hookCount() : v[f.key];
+      if (!val && f.kind !== "length") missing.push(f.label);
+      nameEl.appendChild(el("span", { class: "tok " + groupClass(f.group) + " k-" + f.key + (val ? "" : " missing"), text: val || `[${f.label}]`, title: (i + 1) + ". " + f.label + ": " + f.help }));
+      if (f.key === "id" && V.marker) { nameEl.appendChild(el("span", { class: "sep", text: V.delimiter })); nameEl.appendChild(el("span", { class: "tok g-fixed", text: V.marker, title: "Written automatically. It is how reporting tells video from image." })); }
+      if (i < V.fields.length - 1) nameEl.appendChild(el("span", { class: "sep", text: V.delimiter }));
+    });
+    form.querySelectorAll("select").forEach(sel => { if (["sourceBrand", "ratio"].includes(sel.name)) return; sel.classList.toggle("empty", !sel.value); });
+    V.fields.forEach(f => { const h = document.getElementById("hint-" + f.key); if (!h) return; if (f.kind === "select") { const o = $(f.key).selectedOptions[0]; h.textContent = (o && o.dataset.d) || f.help; } else if (f.kind !== "format") h.textContent = f.help; });
+    const fo = $("format") && $("format").selectedOptions[0]; const fd = document.getElementById("fmtdesc"); if (fd) { fd.innerHTML = ""; fd.append(fo ? el("b", { text: fo.value }) : el("span", { class: "hint", text: "No format picked." }), fo ? el("span", { text: fo.dataset.d || "" }) : ""); }
+    if (document.getElementById("note-concept")) document.getElementById("note-concept").textContent = `${clean($("concept").value).length}/30`;
+    if (document.getElementById("note-designer")) document.getElementById("note-designer").textContent = v.designer ? "prefix " + prefixOf(v.designer) : "";
+    const c = v.category; document.getElementById("srcbrandwrap").classList.toggle("hidden", c !== "Adapt"); document.getElementById("srcotherwrap").classList.toggle("hidden", !(c === "Adapt" && $("sourceBrand").value === "Other"));
+    const ready = !missing.length;
+    const rb = document.getElementById("ratios"); rb.innerHTML = "";
+    if (!isFigma && modeKey === "static") ["1x1", "9x16"].forEach(r => { const n = baseName(v) + V.delimiter + r; const box = el("div", { class: "rbox" }, el("span", { class: "rl", text: r }), el("span", { class: "rn", text: ready ? n : "fill the red menus, the " + r + " name appears here" }), el("button", { type: "button", text: "Copy " + r })); box.querySelector("button").disabled = !ready; box.querySelector("button").addEventListener("click", () => copyText(n, "Copied the " + r + " name.")); rb.appendChild(box); });
+    if (modeKey === "video") { for (let n = 1; n <= hookCount(); n++) { const nm = withHook(v, n); const box = el("div", { class: "rbox" }, el("span", { class: "rl", text: "H" + n }), el("span", { class: "rn", text: ready ? nm : "fill the red menus, hook " + n + " appears here" }), el("button", { type: "button", text: "Copy H" + n })); box.querySelector("button").disabled = !ready; box.querySelector("button").addEventListener("click", () => copyText(nm, "Copied hook " + n + ".")); rb.appendChild(box); } }
+    const full = modeKey === "video" ? withHook(v, 1) : baseName(v) + V.delimiter + "9x16";
+    document.getElementById("fieldcount").textContent = `${V.fields.length} fields`;
+    document.getElementById("charcount").textContent = `${full.length} chars`;
+    if (missing.length) say("bad", isFigma ? `${missing.length} red field${missing.length === 1 ? "" : "s"} still to pick` : "Missing: " + missing.join(", "));
+    if (modeKey === "static" && v.id && v.designer && !v.id.startsWith(prefixOf(v.designer))) say("warn", `ID ${v.id} does not start with ${v.designer}'s prefix ${prefixOf(v.designer)}.`);
+    if (modeKey === "video" && v.id && !/^NK[A-Z0-9]*\d{3,4}$/.test(v.id)) say("warn", "Video IDs look like NK498.");
+    if (v.id && pageNames.length) { const other = pageNames.find(n => n.startsWith(v.id + "_") && !n.startsWith(baseName(v)) && !selection.some(s => s.name === n)); if (other) say("warn", `ID ${v.id} is already used on this page: ${other.slice(0, 60)}...`); }
+    if (v.category === "Adapt" && !v.source) say("bad", "Adaptation needs the brand it came from.");
+    if (v.category === "Ite" && v.iteration === "Ite-None") say("warn", "Category is Ite but Iteration type says Ite-None.");
+    if (v.category && v.category !== "Ite" && v.iteration && v.iteration !== "Ite-None") say("warn", "Iteration type is set but Category is not Ite.");
+    if (v.offerRole === "Off-Headline") say("warn", "Offer as the headline breaks the house rule. Keep only if Andy asked for it.");
+    if (v.offerTiming === "Off-First") say("warn", "Offer first breaks the house rule (offer lands mid or late). Keep only if the brief declares it.");
+    if (v.offer === "NoOffer" && ((v.offerRole && v.offerRole !== "Off-Absent") || (v.offerTiming && v.offerTiming !== "Off-Absent"))) say("warn", "Offer is NoOffer but the offer placement says an offer is in the ad.");
+    if (v.offer && v.offer !== "NoOffer" && (v.offerRole === "Off-Absent" || v.offerTiming === "Off-Absent")) say("warn", "Offer placement says absent but an offer is selected.");
+    if (v.text === "Txt-Only" && v.shot && v.shot !== "Shot-None") say("warn", "Text-only ad but a product shot is selected.");
+    if (v.format === "Money-Back Timeline" || v.proof === "Prf-Guarantee") say("warn", "Guarantee terms are not confirmed per market. Check before shipping.");
+    if (v.product === "Feather" && v.offer && v.offer !== "NoOffer") say("warn", "Feather usually runs without a discount badge. Double-check the offer is really shown.");
+    if (v.type === "UGC" && v.creator === "Cre-None") say("warn", "UGC with no creator: pick who is on camera.");
+    if (v.face === "Face-Talking" && v.voice && v.voice.startsWith("Voice-AI")) say("warn", "Someone talks to camera but the voice is AI. Check.");
+    if (full.length > 400) say("bad", "Name is over Meta's 400-character limit. Shorten the concept."); else if (full.length > 360) say("warn", "Name is over 360 characters. Ads Manager adds ' - Copy' on duplication; keep room under 400.");
+    if (ready && !msgs.querySelector(".bad")) say("ok", isFigma ? "Ready. Select the 1x1 and 9x16 frames, then Apply." : modeKey === "video" ? "Ready. Copy each hook, or Copy all." : "Ready. Copy the 1x1 and the 9x16 name.");
+    document.getElementById("applybtn").disabled = !isFigma || !ready || !!msgs.querySelector(".bad") || !selection.length;
+    savePrefs(); renderSelection();
+  }
+  function renderSelection() {
+    const box = document.getElementById("selbox");
+    if (!isFigma) { box.classList.add("hidden"); return; }
+    box.classList.remove("hidden");
+    if (!selection.length) { box.innerHTML = '<span class="hint">Select one or more ad frames in Figma. Each gets its ratio from its own size.</span>'; return; }
+    const base = baseName(values()); box.innerHTML = "";
+    selection.forEach(s => { const r = ratioOf(s.w, s.h); box.appendChild(el("div", { class: "row" }, el("span", { text: `${s.w}x${s.h}` }), el("span", { text: r ? "-> " + base.slice(0, 26) + "..._" + r : "unknown ratio, will be skipped" }))); });
+  }
+
+  // ---------- parse existing names ----------
+  const setSel = (name, val, table) => { const sel = $(name); if (!sel) return false; const v = table && table[val] !== undefined ? table[val] : val; if (!v) { sel.value = ""; return false; } if ([...sel.options].some(o => o.value === v)) { sel.value = v; return true; } sel.value = ""; return false; };
+  function setFormat(val) { if (!$("format")) return true; fillFormats(""); if (setSel("format", val, V.alias.format)) return true; document.getElementById("fmtsearch").value = val; fillFormats(val); return false; }
+  function setSource(val) { $("sourceBrand").value = ""; $("sourceOther").value = ""; if (!val || !val.startsWith("Src-")) return; const rest = val.slice(4); if (rest === "None") return; if (rest.startsWith("Other-")) { $("sourceBrand").value = "Other"; $("sourceOther").value = rest.slice(6); return; } const b = V.sourceBrands.find(b => b.replace(/\s+/g, "") === rest); if (b) $("sourceBrand").value = b; else { $("sourceBrand").value = "Other"; $("sourceOther").value = rest; } }
+  function parseName(raw) {
+    let s = (raw || "").trim().replace(/\.(png|jpg|jpeg|mp4|mov)$/i, "").replace(/~/g, " ").replace(/( - Copy|-1|_-1|\s\d|\(\d\)\s?\d?|_[0-9a-f]{8})+$/, "");
+    if (!s) return;
+    const p = s.split(V.delimiter); const notes = [];
+    if (modeKey === "static") { const ratio = V.ratio.find(r => r.toLowerCase() === p[p.length - 1].toLowerCase()); if (ratio) p.pop(); }
+    if (V.marker && p[1] === V.marker) p.splice(1, 1);
+    const body = V.fields.filter(f => f.key !== "ratio");
+    if (p.length === body.length) {
+      body.forEach((f, i) => { const val = p[i];
+        if (f.kind === "id") $("id").value = val; else if (f.kind === "date") $("date").value = parseDate(val) || today(); else if (f.kind === "text") $(f.key).value = val;
+        else if (f.kind === "source") setSource(val); else if (f.kind === "format") { if (!setFormat(val)) notes.push("format '" + val + "' is not on the menu"); }
+        else if (f.kind === "hooks") { const m = /^H(\d)$/.exec(val); if (m) $("hooks").value = m[1]; }
+        else if (f.kind === "length") { const m = /^Len-(\d+)$/.exec(val); $("length").value = m ? m[1] : ""; }
+        else if (!setSel(f.key, val, V.alias[f.key])) notes.push(f.label + " '" + val + "' not recognised"); });
+    } else if (modeKey === "video") {
+      let i = 0; $("id").value = p[i++] || ""; $("concept").value = p[i++] || "";
+      const hb = /^(\d)([A-Z])$/.exec(p[i] || ""); if (hb) { $("hooks").value = hb[1]; setSel("body", hb[2]); i++; }
+      if (p[i] === "Generalist" || p[i] === "Genaralist") i++;
+      setSel("product", p[i++], V.alias.product); setSel("type", p[i++], V.alias.type); if (!setSel("avatar", p[i++], V.alias.avatar)) notes.push("avatar: pick the real one");
+      setSel("offer", p[i++], V.alias.offer); setSel("category", p[i++], V.alias.category); setSel("strategist", p[i++]); setSel("editor", p[i++]);
+      p.slice(i).forEach(x => { if (/^\d{6}$/.test(x)) $("date").value = parseDate(x) || today(); else setSel("lp", x, V.alias.lp); });
+      notes.push("Old video name translated. Pick the remaining red fields.");
+    } else {
+      let i = 0; const hasDate = /^\d\d\.\d\d\.\d{2,4}$|^\d{8}$/.test(p[2] || "");
+      $("id").value = p[i++] || ""; setSel("type", p[i++] || "IMG"); if (hasDate) $("date").value = parseDate(p[i++]) || today(); else $("date").value = today();
+      $("concept").value = p[i++] || ""; const ang = p[i++] || "";
+      if (V.event.includes(ang)) { $("event").value = ang; } else if (setSel("angle", ang, V.alias.angle)) { $("event").value = "Evergreen"; } else if (ang) notes.push("angle/event '" + ang + "' needs a pick");
+      setSel("version", p[i++]); setSel("product", p[i++], V.alias.product);
+      const fm = p[i++] || ""; if (!setFormat(fm)) notes.push("format '" + fm + "' is not on the menu, pick the closest");
+      if (!setSel("avatar", p[i++], V.alias.avatar)) notes.push("avatar was 'General' or unknown: pick the real one");
+      setSel("offer", p[i++], V.alias.offer); setSel("category", p[i++], V.alias.category); setSel("strategist", p[i++]); setSel("designer", p[i++]); setSel("lp", p[i++], V.alias.lp);
+      notes.push("Old name translated. Pick the remaining red fields.");
+    }
+    render(); notes.forEach(t => say("warn", t));
+  }
+
+  // ---------- prefs ----------
+  const prefKeys = () => V.fields.filter(f => f.remember).map(f => f.key);
+  function savePrefs() { const o = {}; prefKeys().forEach(k => o[k] = $(k).value); o.menuUrl = $("menuUrl").value.trim(); if (isFigma) parent.postMessage({ pluginMessage: { type: "save-prefs", prefs: o } }, "*"); else { try { localStorage.setItem(prefKey(), JSON.stringify(o)); } catch (e) { } } }
+  function applyPrefs(o) { if (!o) return; if (o.menuUrl && !$("menuUrl").value) $("menuUrl").value = o.menuUrl; prefKeys().forEach(k => { if (o[k] && $(k) && [...$(k).options].some(x => x.value === o[k])) $(k).value = o[k]; }); }
+  function resetForm() { const mu = $("menuUrl").value; form.reset(); $("menuUrl").value = mu; $("date").value = today(); if (document.getElementById("fmtsearch")) { document.getElementById("fmtsearch").value = ""; fillFormats(""); } document.getElementById("paste").value = ""; applyPrefs(lastPrefs); if ($("designer")) $("id").value = nextId(prefixOf($("designer").value)); render(); }
+
+  // ---------- mode switch ----------
+  function mount(key) {
+    modeKey = key; V = key === "video" ? NK_VOCAB_VIDEO : NK_VOCAB;
+    tabs.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.mode === key));
+    buildForm();
+    if (!isFigma) { try { lastPrefs = JSON.parse(localStorage.getItem(prefKey()) || "null"); } catch (e) { } applyPrefs(lastPrefs); if (MENU_URL_DEFAULT.startsWith("http")) $("menuUrl").value = MENU_URL_DEFAULT; try { localStorage.setItem("nk-name-mode", key); } catch (e) { } }
+    document.getElementById("copybtn").textContent = isFigma ? "Copy name" : key === "video" ? "Copy all hooks" : "Copy both";
+    render();
+    if (!isFigma) loadRemote($("menuUrl").value, true);
+  }
+  tabs.querySelectorAll("button").forEach(b => b.addEventListener("click", () => mount(b.dataset.mode)));
+
+  // ---------- events ----------
+  form.addEventListener("input", render); form.addEventListener("change", render);
+  document.getElementById("paste").addEventListener("input", () => parseName(document.getElementById("paste").value));
+  document.getElementById("resetbtn").addEventListener("click", resetForm);
+  document.getElementById("copybtn").addEventListener("click", () => { if (document.querySelector("#msgs .bad")) { say("warn", "Fill the red menus first."); return; } const v = values(); if (modeKey === "video") { const lines = []; for (let n = 1; n <= hookCount(); n++) lines.push(withHook(v, n)); copyText(lines.join("\n"), "Copied " + lines.length + " hook names, one per line."); } else { const b = baseName(v); copyText(isFigma ? b : b + "_1x1\n" + b + "_9x16", isFigma ? "Copied the name without ratio." : "Copied both names, one per line."); } });
+  document.getElementById("applybtn").addEventListener("click", () => { const v = values(); parent.postMessage({ pluginMessage: { type: "apply", base: baseName(v), id: v.id } }, "*"); });
+  document.getElementById("rescanbtn").addEventListener("click", () => { if (isFigma) parent.postMessage({ pluginMessage: { type: "rescan" } }, "*"); });
+  if (!isFigma) { document.getElementById("applybtn").classList.add("hidden"); document.getElementById("rescanbtn").classList.add("hidden"); }
+  else { const below = el("div", { class: "below" }); below.append(document.getElementById("selbox"), document.getElementById("msgs"), document.getElementById("paste").parentElement); document.getElementById("app").appendChild(below); }
+
+  window.onmessage = (ev) => {
+    const m = ev.data && ev.data.pluginMessage; if (!m) return;
+    if (m.type === "init") { pageNames = m.pageNames || []; selection = m.selection || []; lastPrefs = m.prefs || null; applyPrefs(lastPrefs); if (!$("menuUrl").value && MENU_URL_DEFAULT.startsWith("http")) $("menuUrl").value = MENU_URL_DEFAULT; $("id").value = nextId(prefixOf($("designer").value)); render(); loadRemote($("menuUrl").value, true);
+      if (selection.length === 1 && /_IMG_|_VID_|_GIF_/.test(selection[0].name)) { document.getElementById("paste").value = selection[0].name; parseName(selection[0].name); } }
+    if (m.type === "selection") { selection = m.selection || []; render(); }
+    if (m.type === "page") { pageNames = m.pageNames || []; render(); say("ok", `Scanned ${pageNames.length} ad frames on this page.`); }
+    if (m.type === "applied") { pageNames = m.pageNames || pageNames; render(); say("ok", m.text || "Renamed."); }
+    if (m.type === "error") say("bad", m.text);
+  };
+
+  // boot
+  let startMode = "static";
+  if (LOCK === "static" || LOCK === "video") startMode = LOCK;
+  else if (!isFigma && hasVideo) { try { const q = new URLSearchParams(location.search).get("mode"); startMode = q === "video" ? "video" : (localStorage.getItem("nk-name-mode") === "video" ? "video" : "static"); } catch (e) { } }
+  mount(startMode);
+  if (isFigma) parent.postMessage({ pluginMessage: { type: "ready" } }, "*");
+})();
+</script>
